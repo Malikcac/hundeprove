@@ -8,7 +8,8 @@ import {
   query, 
   where, 
   orderBy, 
-  serverTimestamp 
+  serverTimestamp,
+  onSnapshot 
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -162,6 +163,33 @@ export const updateScore = async (scoreId, updateData) => {
     await updateDoc(docRef, updateData);
   } catch (error) {
     console.error('Error updating score:', error);
+    throw error;
+  }
+};
+
+// Real-time listener for scores
+export const subscribeToScores = (trialId, participantId, callback) => {
+  try {
+    let q = collection(db, 'scores');
+    
+    const conditions = [where('trialId', '==', trialId)];
+    if (participantId) {
+      conditions.push(where('participantId', '==', participantId));
+    }
+    
+    q = query(q, ...conditions, orderBy('postNumber', 'asc'));
+    
+    return onSnapshot(q, (querySnapshot) => {
+      const scores = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      callback(scores);
+    }, (error) => {
+      console.error('Error in scores subscription:', error);
+    });
+  } catch (error) {
+    console.error('Error setting up scores subscription:', error);
     throw error;
   }
 };

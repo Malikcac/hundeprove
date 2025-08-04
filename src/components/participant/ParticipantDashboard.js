@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getParticipants, getScores, getUsers, getTrials } from '../../services/firestoreService';
+import { getParticipants, getUsers, getTrials, subscribeToScores } from '../../services/firestoreService';
 import { formatDate } from '../../utils/dateUtils';
 import Loading from '../common/Loading';
 import toast from 'react-hot-toast';
@@ -13,9 +13,19 @@ const ParticipantDashboard = () => {
   const [judges, setJudges] = useState({});
   const [trials, setTrials] = useState({});
   const [loading, setLoading] = useState(true);
+  const [scoreSubscriptions, setScoreSubscriptions] = useState([]);
 
   useEffect(() => {
     loadMyData();
+    
+    // Cleanup subscriptions on unmount
+    return () => {
+      scoreSubscriptions.forEach(unsubscribe => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
+    };
   }, [userProfile]);
 
   const loadMyData = async () => {
@@ -36,38 +46,55 @@ const ParticipantDashboard = () => {
       });
       setTrials(trialsMap);
 
-      // Get scores for my participations
-      const allScores = {};
-      const judgeIds = new Set();
-
-      for (const participation of myParticipations) {
-        try {
-          const participationScores = await getScores(participation.trialId, participation.id);
-          allScores[participation.id] = participationScores;
-          
-          // Collect judge IDs
-          participationScores.forEach(score => {
-            if (score.judgeId) judgeIds.add(score.judgeId);
-          });
-        } catch (error) {
-          console.log(`No scores found for participation ${participation.id}`);
-          allScores[participation.id] = [];
+      // Get all judges info first
+      const allUsers = await getUsers();
+      const judgeMap = {};
+      allUsers.forEach(user => {
+        if (user.role === 'judge') {
+          judgeMap[user.id] = user;
         }
-      }
+      });
+      setJudges(judgeMap);
 
-      setScores(allScores);
-
-      // Get judge information
-      if (judgeIds.size > 0) {
-        const allUsers = await getUsers();
-        const judgeMap = {};
-        allUsers.forEach(user => {
-          if (judgeIds.has(user.id)) {
-            judgeMap[user.id] = user;
+      // Set up real-time listeners for scores for each participation
+      const subscriptions = [];
+      const initialScores = {};
+      
+      myParticipations.forEach(participation => {
+        initialScores[participation.id] = [];
+        
+        // Set up real-time listener for this participation's scores
+        const unsubscribe = subscribeToScores(
+          participation.trialId, 
+          participation.id, 
+          (participationScores) => {
+            setScores(prevScores => {
+              const prevCount = prevScores[participation.id]?.length || 0;
+              const newCount = participationScores.length;
+              
+              // Show toast notification for new scores (only when not initially loading)
+              if (!loading && newCount > prevCount && prevCount > 0) {
+                const newScore = participationScores[participationScores.length - 1];
+                const judgeName = judgeMap[newScore.judgeId]?.name || 'Ukendt dommer';
+                toast.success(`Ny bedømmelse! Post ${newScore.postNumber}: ${newScore.score}/20 af ${judgeName}`, {
+                  duration: 6000,
+                  icon: '🎯'
+                });
+              }
+              
+              return {
+                ...prevScores,
+                [participation.id]: participationScores
+              };
+            });
           }
-        });
-        setJudges(judgeMap);
-      }
+        );
+        
+        subscriptions.push(unsubscribe);
+      });
+      
+      setScores(initialScores);
+      setScoreSubscriptions(subscriptions);
 
     } catch (error) {
       console.error('Error loading participant data:', error);
@@ -111,8 +138,11 @@ const ParticipantDashboard = () => {
     <div className="participant-dashboard">
       <div className="page-container">
         <div className="page-header">
-          <h1 className="page-title">Deltager Dashboard</h1>
-          <p className="page-subtitle">Velkommen, {userProfile?.name}</p>
+          <h1 className="page-title">
+            Deltager Dashboard
+            <span className="live-badge">🔴 LIVE</span>
+          </h1>
+          <p className="page-subtitle">Velkommen, {userProfile?.name} - Scores opdateres automatisk!</p>
         </div>
 
         {myParticipations.length === 0 ? (

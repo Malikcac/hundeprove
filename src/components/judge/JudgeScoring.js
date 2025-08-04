@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   getTrial, 
   getParticipants, 
-  getScores,
+  subscribeToScores,
   createScore,
   updateScore 
 } from '../../services/firestoreService';
@@ -25,9 +25,17 @@ const JudgeScoring = () => {
   const [submittingScore, setSubmittingScore] = useState(false);
   const [participantNumber, setParticipantNumber] = useState('');
   const [score, setScore] = useState('');
+  const [scoresSubscription, setScoresSubscription] = useState(null);
 
   useEffect(() => {
     loadScoringData();
+    
+    // Cleanup subscription on unmount
+    return () => {
+      if (scoresSubscription && typeof scoresSubscription === 'function') {
+        scoresSubscription();
+      }
+    };
   }, [trialId, postNumber]);
 
   const loadScoringData = async () => {
@@ -42,20 +50,23 @@ const JudgeScoring = () => {
       setTrial(trialData);
       setParticipants(participantsData);
       
-      // Try to load existing scores (might fail if none exist yet)
-      try {
-        const scoresData = await getScores(trialId);
-        const scoresMap = {};
-        scoresData.forEach(scoreData => {
-          if (scoreData.postNumber === parseInt(postNumber)) {
+      // Set up real-time listener for scores for this post
+      const unsubscribe = subscribeToScores(
+        trialId, 
+        parseInt(postNumber),
+        (scoresData) => {
+          const scoresMap = {};
+          scoresData.forEach(scoreData => {
             scoresMap[scoreData.participantId] = scoreData;
-          }
-        });
-        setScores(scoresMap);
-      } catch (scoresError) {
-        console.log('No existing scores found, starting fresh');
-        setScores({});
-      }
+          });
+          setScores(scoresMap);
+        },
+        (error) => {
+          console.error('Error listening to scores:', error);
+        }
+      );
+      
+      setScoresSubscription(unsubscribe);
       
     } catch (error) {
       console.error('Error loading scoring data:', error);
@@ -112,8 +123,7 @@ const JudgeScoring = () => {
         toast.success(`Bedømt deltager ${participantNumber}: ${scoreValue} point`);
       }
       
-      // Reload scores to show updated data
-      await loadScoringData();
+      // Real-time listener will automatically update the scores, no need to reload
       
       // Clear form
       setParticipantNumber('');
@@ -228,7 +238,11 @@ const JudgeScoring = () => {
             <div className="card-header">
               <h2 className="card-title">
                 Tilmeldte Deltagere ({participants.length})
+                <span className="live-badge">● LIVE</span>
               </h2>
+              <p className="card-subtitle">
+                Scores opdateres automatisk når andre dommere bedømmer
+              </p>
             </div>
             
             {participants.length === 0 ? (

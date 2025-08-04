@@ -6,11 +6,39 @@
 
 .page-header {
   margin-bottom: 2rem;
+  position: relative;
 }
 
 .page-title {
   color: #2c3e50;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.live-badge {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: livePulse 2s infinite;
+  box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+}
+
+@keyframes livePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 
 .page-subtitle {
@@ -185,6 +213,7 @@
   border-radius: 10px;
   padding: 1rem;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .score-item:hover {
@@ -201,6 +230,57 @@
 .score-item.no-score:hover {
   border-color: #bbb;
   opacity: 0.9;
+}
+
+/* Animation for newly updated scores */
+@keyframes scoreUpdate {
+  0% {
+    background: #e8f5e8;
+    border-color: #4caf50;
+    transform: scale(1.02);
+  }
+  50% {
+    background: #c8e6c9;
+    border-color: #388e3c;
+  }
+  100% {
+    background: #f8f9fa;
+    border-color: #e9ecef;
+    transform: scale(1);
+  }
+}
+
+.score-item.updated {
+  animation: scoreUpdate 2s ease-out;
+}
+
+/* Live indicator */
+.live-indicator {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ff4444;
+  color: white;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  font-size: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .score-header {
