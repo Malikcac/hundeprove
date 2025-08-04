@@ -102,13 +102,13 @@
   color: white;
   padding: 1rem;
   border-radius: 10px;
-  min-width: 120px;
+  min-width: 140px;
 }
 
 .total-score {
   font-size: 1.5rem;
   font-weight: bold;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .score-value {
@@ -118,6 +118,18 @@
 .score-max {
   font-size: 1.2rem;
   opacity: 0.8;
+}
+
+.progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.completed-posts {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 600;
 }
 
 .average-score {
@@ -156,6 +168,9 @@
   color: #2c3e50;
   margin: 0 0 1rem 0;
   font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .scores-grid {
@@ -175,6 +190,17 @@
 .score-item:hover {
   border-color: #667eea;
   transform: translateY(-2px);
+}
+
+.score-item.no-score {
+  background: #f5f5f5;
+  border: 2px dashed #ddd;
+  opacity: 0.7;
+}
+
+.score-item.no-score:hover {
+  border-color: #bbb;
+  opacity: 0.9;
 }
 
 .score-header {
@@ -198,10 +224,19 @@
   font-size: 0.9rem;
 }
 
+.score-item.no-score .score-points {
+  background: #ccc;
+  color: #666;
+}
+
 .score-judge {
   color: #666;
   font-size: 0.9rem;
   font-style: italic;
+}
+
+.score-item.no-score .score-judge {
+  color: #999;
 }
 
 .no-scores {

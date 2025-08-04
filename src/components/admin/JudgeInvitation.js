@@ -29,13 +29,15 @@ const JudgeInvitation = () => {
         getJudgeInvitations()
       ]);
       
-      // Filtrer kun kommende prøver
-      const upcomingTrials = trialsData.filter(trial => {
-        const trialDate = trial.date?.toDate ? trial.date.toDate() : new Date(trial.date);
-        return trialDate >= new Date();
+      // Vis alle prøver (også dem der afholdes i dag)
+      // Sorter med nyeste/igangværende først
+      const sortedTrials = trialsData.sort((a, b) => {
+        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+        return dateB - dateA; // Nyeste først
       });
       
-      setTrials(upcomingTrials);
+      setTrials(sortedTrials);
       setInvitations(invitationsData);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -119,7 +121,18 @@ const JudgeInvitation = () => {
 
   const getTrialDate = (trialId) => {
     const trial = trials.find(t => t.id === trialId);
-    return trial ? formatDate(trial.date) : 'Dato ikke tilgængelig';
+    if (!trial) return 'Dato ikke tilgængelig';
+    
+    const trialDate = trial.date?.toDate ? trial.date.toDate() : new Date(trial.date);
+    const today = new Date();
+    const isToday = trialDate.toDateString() === today.toDateString();
+    
+    let dateText = formatDate(trial.date);
+    if (isToday) {
+      dateText += ' (I DAG)';
+    }
+    
+    return dateText;
   };
 
   if (loadingData) {
@@ -139,12 +152,12 @@ const JudgeInvitation = () => {
             <div className="card">
               <div className="card-header">
                 <h2 className="card-title">Send Invitation</h2>
-                <p className="card-subtitle">Inviter en dommer til en specifik prøve</p>
+                <p className="card-subtitle">Inviter en dommer til en prøve (også prøver der afholdes i dag)</p>
               </div>
               
               {trials.length === 0 ? (
                 <div className="no-trials">
-                  <p>Ingen kommende prøver tilgængelige for invitationer.</p>
+                  <p>Ingen prøver tilgængelige for invitationer.</p>
                   <p>Opret først en prøve før du kan invitere dommere.</p>
                 </div>
               ) : (
@@ -163,11 +176,25 @@ const JudgeInvitation = () => {
                       required
                     >
                       <option value="">-- Vælg en prøve --</option>
-                      {trials.map(trial => (
-                        <option key={trial.id} value={trial.id}>
-                          {trial.name} - {formatDate(trial.date)}
-                        </option>
-                      ))}
+                      {trials.map(trial => {
+                        const trialDate = trial.date?.toDate ? trial.date.toDate() : new Date(trial.date);
+                        const today = new Date();
+                        const isToday = trialDate.toDateString() === today.toDateString();
+                        const isPast = trialDate < today && !isToday;
+                        
+                        let displayText = `${trial.name} - ${formatDate(trial.date)}`;
+                        if (isToday) {
+                          displayText += ' (I DAG)';
+                        } else if (isPast) {
+                          displayText += ' (Afsluttet)';
+                        }
+                        
+                        return (
+                          <option key={trial.id} value={trial.id}>
+                            {displayText}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -186,6 +213,9 @@ const JudgeInvitation = () => {
                       placeholder="dommer@email.com"
                       required
                     />
+                    <div className="form-help">
+                      💡 Du kan invitere dommere til prøver der afholdes i dag - de kan acceptere og begynde at bedømme med det samme!
+                    </div>
                   </div>
 
                   <button 

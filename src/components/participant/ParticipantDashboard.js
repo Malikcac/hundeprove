@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getParticipants, getScores, getUsers } from '../../services/firestoreService';
+import { getParticipants, getScores, getUsers, getTrials } from '../../services/firestoreService';
 import { formatDate } from '../../utils/dateUtils';
 import Loading from '../common/Loading';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ const ParticipantDashboard = () => {
   const [myParticipations, setMyParticipations] = useState([]);
   const [scores, setScores] = useState({});
   const [judges, setJudges] = useState({});
+  const [trials, setTrials] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +27,14 @@ const ParticipantDashboard = () => {
       const myParticipations = allParticipants.filter(p => p.email === userProfile.email);
       
       setMyParticipations(myParticipations);
+
+      // Get trial information for each participation
+      const allTrials = await getTrials();
+      const trialsMap = {};
+      allTrials.forEach(trial => {
+        trialsMap[trial.id] = trial;
+      });
+      setTrials(trialsMap);
 
       // Get scores for my participations
       const allScores = {};
@@ -73,9 +82,25 @@ const ParticipantDashboard = () => {
     return participationScores.reduce((total, score) => total + score.score, 0);
   };
 
-  const getMaxPossibleScore = (participationId) => {
+  const getMaxPossibleScore = (participationId, numberOfPosts) => {
+    return numberOfPosts * 20; // Max 20 points per post
+  };
+
+  const getAllPosts = (participationId, numberOfPosts) => {
     const participationScores = scores[participationId] || [];
-    return participationScores.length * 20; // Max 20 points per post
+    const allPosts = [];
+    
+    for (let postNumber = 1; postNumber <= numberOfPosts; postNumber++) {
+      const existingScore = participationScores.find(score => score.postNumber === postNumber);
+      allPosts.push({
+        postNumber,
+        score: existingScore?.score || null,
+        judgeId: existingScore?.judgeId || null,
+        hasScore: !!existingScore
+      });
+    }
+    
+    return allPosts;
   };
 
   if (loading) {
@@ -100,34 +125,38 @@ const ParticipantDashboard = () => {
         ) : (
           <div className="participations-list">
             {myParticipations.map(participation => {
-              const participationScores = scores[participation.id] || [];
+              const trial = trials[participation.trialId];
+              const numberOfPosts = trial?.numberOfPosts || 0;
+              const allPosts = getAllPosts(participation.id, numberOfPosts);
               const totalScore = getTotalScore(participation.id);
-              const maxScore = getMaxPossibleScore(participation.id);
-              const averageScore = participationScores.length > 0 ? (totalScore / participationScores.length).toFixed(1) : 0;
+              const maxScore = getMaxPossibleScore(participation.id, numberOfPosts);
+              const completedPosts = allPosts.filter(post => post.hasScore).length;
+              const averageScore = completedPosts > 0 ? (totalScore / completedPosts).toFixed(1) : 0;
 
               return (
                 <div key={participation.id} className="participation-card">
                   <div className="participation-header">
                     <div className="participation-info">
-                      <h3 className="trial-name">{participation.trialName || 'Hundeprøve'}</h3>
+                      <h3 className="trial-name">{trial?.name || 'Hundeprøve'}</h3>
                       <p className="participation-details">
                         <span className="participant-number">#{participation.participantNumber}</span>
                         <span className="dog-info">{participation.dogName}</span>
-                        <span className="trial-date">📅 {formatDate(participation.createdAt)}</span>
+                        <span className="trial-date">📅 {formatDate(trial?.date || participation.createdAt)}</span>
                       </p>
                     </div>
                     
-                    {participationScores.length > 0 && (
-                      <div className="score-summary">
-                        <div className="total-score">
-                          <span className="score-value">{totalScore}</span>
-                          <span className="score-max">/{maxScore}</span>
-                        </div>
-                        <div className="average-score">
-                          Gennemsnit: {averageScore}
-                        </div>
+                    <div className="score-summary">
+                      <div className="total-score">
+                        <span className="score-value">{totalScore}</span>
+                        <span className="score-max">/{maxScore}</span>
                       </div>
-                    )}
+                      <div className="progress-info">
+                        <div className="completed-posts">{completedPosts}/{numberOfPosts} poster</div>
+                        {completedPosts > 0 && (
+                          <div className="average-score">Gennemsnit: {averageScore}</div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="participation-details-section">
@@ -139,30 +168,27 @@ const ParticipantDashboard = () => {
                     </div>
                   </div>
 
-                  {participationScores.length > 0 ? (
-                    <div className="scores-section">
-                      <h4>📊 Bedømmelser</h4>
-                      <div className="scores-grid">
-                        {participationScores
-                          .sort((a, b) => a.postNumber - b.postNumber)
-                          .map(score => (
-                          <div key={score.id} className="score-item">
-                            <div className="score-header">
-                              <span className="post-number">Post {score.postNumber}</span>
-                              <span className="score-points">{score.score}/20</span>
-                            </div>
-                            <div className="score-judge">
-                              Dommer: {judges[score.judgeId]?.name || 'Ukendt'}
-                            </div>
+                  <div className="scores-section">
+                    <h4>📊 Bedømmelser ({completedPosts}/{numberOfPosts} poster)</h4>
+                    <div className="scores-grid">
+                      {allPosts.map(post => (
+                        <div key={post.postNumber} className={`score-item ${!post.hasScore ? 'no-score' : ''}`}>
+                          <div className="score-header">
+                            <span className="post-number">Post {post.postNumber}</span>
+                            <span className="score-points">
+                              {post.hasScore ? `${post.score}/20` : '—/20'}
+                            </span>
                           </div>
-                        ))}
-                      </div>
+                          <div className="score-judge">
+                            {post.hasScore ? 
+                              `Dommer: ${judges[post.judgeId]?.name || 'Ukendt'}` : 
+                              'Ikke bedømt endnu'
+                            }
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ) : (
-                    <div className="no-scores">
-                      <p>Ingen bedømmelser endnu</p>
-                    </div>
-                  )}
+                  </div>
                 </div>
               );
             })}
