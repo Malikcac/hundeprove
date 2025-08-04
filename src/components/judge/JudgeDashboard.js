@@ -3,6 +3,8 @@ import { Routes, Route, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import TrialInvitations from './TrialInvitations';
 import JudgeTrialView from './JudgeTrialView';
+import PostAssignment from './PostAssignment';
+import JudgeScoring from './JudgeScoring';
 import './JudgeDashboard.css';
 
 const JudgeDashboard = () => {
@@ -28,23 +30,7 @@ const JudgeDashboard = () => {
           <h3>⚖️ Mine Prøver</h3>
           <p>Prøver du skal dømme</p>
           <Link to="/judge/trials" className="btn btn-primary">
-            Se Mine Prøver
-          </Link>
-        </div>
-
-        <div className="dashboard-card">
-          <h3>📝 Bedømmelse</h3>
-          <p>Indtast points og bedømmelser</p>
-          <Link to="/judge/scoring" className="btn btn-primary">
-            Start Bedømmelse
-          </Link>
-        </div>
-
-        <div className="dashboard-card">
-          <h3>📊 Historik</h3>
-          <p>Se tidligere bedømmelser</p>
-          <Link to="/judge/history" className="btn btn-primary">
-            Se Historik
+            Mine Prøver
           </Link>
         </div>
       </div>
@@ -57,8 +43,8 @@ const JudgeDashboard = () => {
         <Route index element={<JudgeHome />} />
         <Route path="invitations" element={<TrialInvitations />} />
         <Route path="trials" element={<JudgeTrialView />} />
-        <Route path="scoring" element={<div className="page-container"><h1>Bedømmelse kommer snart...</h1></div>} />
-        <Route path="history" element={<div className="page-container"><h1>Historik kommer snart...</h1></div>} />
+        <Route path="trials/:trialId/posts" element={<PostAssignment />} />
+        <Route path="scoring/:trialId/:postNumber" element={<JudgeScoring />} />
       </Routes>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getJudgeTrials, getParticipants } from '../../services/firestoreService';
 import { formatDate, isToday, isPastDate } from '../../utils/dateUtils';
@@ -8,6 +9,7 @@ import './JudgeTrialView.css';
 
 const JudgeTrialView = () => {
   const { userProfile } = useAuth();
+  const navigate = useNavigate();
   const [trials, setTrials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [participantCounts, setParticipantCounts] = useState({});
@@ -64,12 +66,11 @@ const JudgeTrialView = () => {
   };
 
   const handleStartScoring = (trial) => {
-    // For now, show a message - scoring functionality can be implemented later
-    toast.success(`Bedømmelse for "${trial.name}" kommer snart...`);
+    // Navigate to post assignment page
+    navigate(`/judge/trials/${trial.id}/posts`);
   };
 
   const handleViewParticipants = (trial) => {
-    // For now, show a message - participant view can be implemented later  
     const participantCount = participantCounts[trial.id] || 0;
     if (participantCount === 0) {
       toast.success(`Ingen deltagere registreret til "${trial.name}" endnu.`);
@@ -79,7 +80,6 @@ const JudgeTrialView = () => {
   };
 
   const handleViewResults = (trial) => {
-    // For now, show a message - results view can be implemented later
     toast.success(`Resultater for "${trial.name}" kommer snart...`);
   };
 
@@ -137,7 +137,7 @@ const JudgeTrialView = () => {
                         onClick={() => handleStartScoring(trial)}
                         title="Start bedømmelse af denne prøve"
                       >
-                        🏆 Start Bedømmelse
+                        🏆 Bedøm
                       </button>
                     ) : trialStatus.status === 'upcoming' ? (
                       <button className="btn btn-secondary" disabled>
@@ -152,14 +152,6 @@ const JudgeTrialView = () => {
                         📊 Se Resultater
                       </button>
                     )}
-                    
-                    <button 
-                      className="btn btn-secondary"
-                      onClick={() => handleViewParticipants(trial)}
-                      title="Se deltagere i denne prøve"
-                    >
-                      👥 Se Deltagere
-                    </button>
                   </div>
 
                   {isToday(trial.date) && (

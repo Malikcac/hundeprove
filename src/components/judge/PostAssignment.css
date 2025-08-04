@@ -1,0 +1,98 @@
+.post-assignment {
+  min-height: calc(100vh - 140px);
+  background-color: #f5f5f5;
+}
+
+.assignment-content {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.assigned-post-info .card {
+  text-align: center;
+  padding: 2rem;
+}
+
+.assigned-post-info h2 {
+  color: #2e7d32;
+  margin-bottom: 1rem;
+}
+
+.post-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.post-selection .card {
+  padding: 2rem;
+}
+
+.posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.post-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.post-card:hover {
+  border-color: #1976d2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.post-header h3 {
+  margin: 0;
+  color: #1976d2;
+  font-size: 1.25rem;
+}
+
+.status-assigned {
+  background: #f57c00;
+  color: white;
+}
+
+.post-info {
+  margin-bottom: 1.5rem;
+}
+
+.post-info p {
+  margin: 0.5rem 0;
+  color: #666;
+}
+
+.btn-disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+}
+
+.btn-disabled:hover {
+  background: #ccc !important;
+  transform: none !important;
+}
+
+@media (max-width: 768px) {
+  .posts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .post-actions {
+    flex-direction: column;
+  }
+}

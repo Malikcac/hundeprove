@@ -304,3 +304,46 @@ export const getJudgeTrials = async (judgeId, judgeEmail) => {
     throw error;
   }
 };
+
+// Assign judge to a specific post
+export const assignJudgeToPost = async (trialId, judgeId, postNumber) => {
+  try {
+    const trialRef = doc(db, 'trials', trialId);
+    const trialDoc = await getDoc(trialRef);
+    
+    if (!trialDoc.exists()) {
+      throw new Error('Trial not found');
+    }
+    
+    const trialData = trialDoc.data();
+    const currentAssignments = trialData.postAssignments || {};
+    const currentJudges = trialData.judges || [];
+    
+    // Remove judge from any previous post assignment
+    Object.keys(currentAssignments).forEach(jId => {
+      if (jId === judgeId) {
+        delete currentAssignments[jId];
+      }
+    });
+    
+    // Assign judge to new post
+    currentAssignments[judgeId] = postNumber;
+    
+    // Add judge to judges array if not already there
+    const updatedJudges = currentJudges.includes(judgeId) 
+      ? currentJudges 
+      : [...currentJudges, judgeId];
+    
+    // Use merge to avoid overwriting other fields
+    await updateDoc(trialRef, {
+      postAssignments: currentAssignments,
+      judges: updatedJudges
+    });
+    
+    console.log('Successfully assigned judge to post:', { trialId, judgeId, postNumber });
+    
+  } catch (error) {
+    console.error('Error assigning judge to post:', error);
+    throw error;
+  }
+};
