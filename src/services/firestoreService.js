@@ -202,7 +202,7 @@ export const getJudgeInvitations = async (judgeEmail = null) => {
   }
 };
 
-export const updateJudgeInvitation = async (invitationId, status) => {
+export const updateJudgeInvitation = async (invitationId, status, currentUserId = null) => {
   try {
     const docRef = doc(db, 'judgeInvitations', invitationId);
     
@@ -222,18 +222,45 @@ export const updateJudgeInvitation = async (invitationId, status) => {
     
     // If accepted, add judge to trial
     if (status === 'accepted') {
-      const trialRef = doc(db, 'trials', invitation.trialId);
-      const trialSnap = await getDoc(trialRef);
+      // Find the judge's userId by email
+      let judgeId = currentUserId; // Use provided userId if available
       
-      if (trialSnap.exists()) {
-        const trial = trialSnap.data();
-        const currentJudges = trial.judges || [];
+      if (!judgeId) {
+        // Find judge by email if userId not provided
+        const usersRef = collection(db, 'users');
+        const userQuery = query(usersRef, where('email', '==', invitation.judgeEmail));
+        const userSnapshot = await getDocs(userQuery);
         
-        // Add judge if not already in the list
-        if (!currentJudges.includes(invitation.judgeId)) {
-          await updateDoc(trialRef, {
-            judges: [...currentJudges, invitation.judgeId]
-          });
+        if (!userSnapshot.empty) {
+          judgeId = userSnapshot.docs[0].id;
+        } else {
+          console.warn(`Judge with email ${invitation.judgeEmail} not found in users collection`);
+        }
+      }
+      
+      if (judgeId && invitation.trialId) {
+        const trialRef = doc(db, 'trials', invitation.trialId);
+        const trialSnap = await getDoc(trialRef);
+        
+        if (trialSnap.exists()) {
+          const trial = trialSnap.data();
+          const currentJudges = trial.judges || [];
+          
+          // Add judge if not already in the list
+          if (!currentJudges.includes(judgeId)) {
+            await updateDoc(trialRef, {
+              judges: [...currentJudges, judgeId]
+            });
+          }
+        } else {
+          console.warn(`Trial with ID ${invitation.trialId} not found`);
+        }
+      } else {
+        if (!judgeId) {
+          console.error('Judge ID could not be determined for invitation acceptance');
+        }
+        if (!invitation.trialId) {
+          console.error('Trial ID is missing from invitation');
         }
       }
     }

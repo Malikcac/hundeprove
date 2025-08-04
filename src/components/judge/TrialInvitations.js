@@ -48,7 +48,7 @@ const TrialInvitations = () => {
     setActionLoading(prev => ({ ...prev, [invitationId]: true }));
     
     try {
-      await updateJudgeInvitation(invitationId, status);
+      await updateJudgeInvitation(invitationId, status, userProfile.uid);
       
       // Opdater local state
       setInvitations(prev => prev.map(inv => 
