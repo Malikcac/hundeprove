@@ -1,0 +1,15 @@
+.participant-list {
+  min-height: calc(100vh - 140px);
+  background-color: #f5f5f5;
+}
+
+.participant-content {
+  padding: 2rem;
+}
+
+.no-data {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  margin: 0;
+}
