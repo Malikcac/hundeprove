@@ -5,6 +5,7 @@ import TrialSetup from './TrialSetup';
 import ParticipantRegistration from './ParticipantRegistration';
 import JudgeInvitation from './JudgeInvitation';
 import ParticipantList from './ParticipantList';
+import TrialParticipants from './TrialParticipants';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -27,9 +28,17 @@ const AdminDashboard = () => {
         </div>
 
         <div className="dashboard-card">
-          <h3>👥 Deltagere</h3>
-          <p>Registrer deltagere til prøver</p>
+          <h3>👥 Ny Deltager</h3>
+          <p>Registrer nye deltagere til prøver</p>
           <Link to="/admin/participants" className="btn btn-primary">
+            Registrer Deltager
+          </Link>
+        </div>
+
+        <div className="dashboard-card">
+          <h3>📋 Prøve Deltagere</h3>
+          <p>Se og administrer deltagere for hver prøve</p>
+          <Link to="/admin/trial-participants" className="btn btn-primary">
             Administrer Deltagere
           </Link>
         </div>
@@ -59,8 +68,10 @@ const AdminDashboard = () => {
         <Route index element={<AdminHome />} />
         <Route path="trials" element={<TrialSetup />} />
         <Route path="participants" element={<ParticipantRegistration />} />
+        <Route path="trial-participants" element={<TrialParticipants />} />
         <Route path="judges" element={<JudgeInvitation />} />
         <Route path="participant-list" element={<ParticipantList />} />
+        <Route path="results" element={<div className="page-container"><h1>Resultater kommer snart...</h1></div>} />
       </Routes>
     </div>
   );

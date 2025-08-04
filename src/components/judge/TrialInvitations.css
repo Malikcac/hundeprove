@@ -1,0 +1,131 @@
+.trial-invitations {
+  min-height: calc(100vh - 140px);
+  background-color: #f5f5f5;
+}
+
+.no-invitations {
+  text-align: center;
+  padding: 3rem;
+}
+
+.no-invitations h3 {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.no-invitations p {
+  color: #999;
+  font-size: 1.1rem;
+}
+
+.invitations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.invitation-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.invitation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.invitation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.invitation-info {
+  flex: 1;
+}
+
+.trial-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1976d2;
+  margin: 0 0 0.5rem 0;
+}
+
+.trial-date {
+  font-size: 1rem;
+  color: #666;
+  margin: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trial-posts {
+  font-size: 0.9rem;
+  color: #888;
+  margin: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.invitation-status {
+  flex-shrink: 0;
+}
+
+.invitation-details {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.invitation-details p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.invitation-details p:first-child {
+  margin-top: 0;
+}
+
+.invitation-details p:last-child {
+  margin-bottom: 0;
+}
+
+.invitation-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.invitation-actions .btn {
+  min-width: 120px;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .invitation-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .invitation-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .invitation-actions .btn {
+    width: 100%;
+  }
+  
+  .trial-name {
+    font-size: 1.3rem;
+  }
+}

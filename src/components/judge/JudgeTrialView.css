@@ -1,0 +1,148 @@
+.judge-trial-view {
+  min-height: calc(100vh - 140px);
+  background-color: #f5f5f5;
+}
+
+.no-trials {
+  text-align: center;
+  padding: 3rem;
+}
+
+.no-trials h3 {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.no-trials p {
+  color: #999;
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+
+.trials-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.trial-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.trial-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.trial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.trial-info {
+  flex: 1;
+}
+
+.trial-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1976d2;
+  margin: 0 0 1rem 0;
+}
+
+.trial-date,
+.trial-posts,
+.trial-participants {
+  font-size: 1rem;
+  color: #666;
+  margin: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trial-status {
+  flex-shrink: 0;
+}
+
+.trial-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.trial-actions .btn {
+  flex: 1;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.judge-info {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e8f5e8;
+}
+
+.info-box {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
+}
+
+.info-box h4 {
+  color: #2e7d32;
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-box p {
+  color: #2e7d32;
+  margin: 0 0 1rem 0;
+  font-weight: 500;
+}
+
+.info-box ul {
+  color: #388e3c;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.info-box li {
+  margin: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+  .trial-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .trial-actions {
+    flex-direction: column;
+  }
+  
+  .trial-actions .btn {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .trial-name {
+    font-size: 1.3rem;
+  }
+  
+  .info-box {
+    padding: 1rem;
+  }
+}

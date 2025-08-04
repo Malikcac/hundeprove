@@ -1,0 +1,143 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions for role-based access
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    function isJudge() {
+      return isAuthenticated() && getUserRole() == 'judge';
+    }
+    
+    function isParticipant() {
+      return isAuthenticated() && getUserRole() == 'participant';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection - users can read their own profile, admins can read all
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Trials collection
+    match /trials/{trialId} {
+      // Admins can do everything
+      allow read, write: if isAdmin();
+      
+      // Judges can read trials they are invited to
+      allow read: if isJudge() && 
+        request.auth.uid in resource.data.judges;
+      
+      // Participants can read all trials (to see available trials)
+      allow read: if isParticipant();
+    }
+
+    // Participants collection
+    match /participants/{participantId} {
+      // Admins can do everything
+      allow read, write: if isAdmin();
+      
+      // Judges can read participants for trials they are judging
+      allow read: if isJudge() && 
+        exists(/databases/$(database)/documents/trials/$(resource.data.trialId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/trials/$(resource.data.trialId)).data.judges;
+      
+      // Participants can read their own registrations (based on email)
+      allow read: if isParticipant() && 
+        request.auth.token.email == resource.data.email;
+    }
+
+    // Scores collection
+    match /scores/{scoreId} {
+      // Admins can read all scores
+      allow read: if isAdmin();
+      
+      // Judges can create and update scores for trials they are judging
+      allow create: if isJudge() && 
+        exists(/databases/$(database)/documents/trials/$(resource.data.trialId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/trials/$(resource.data.trialId)).data.judges &&
+        request.auth.uid == resource.data.judgeId;
+      
+      allow update: if isJudge() && 
+        exists(/databases/$(database)/documents/trials/$(resource.data.trialId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/trials/$(resource.data.trialId)).data.judges &&
+        request.auth.uid == resource.data.judgeId;
+      
+      // Judges can read scores for their trials
+      allow read: if isJudge() && 
+        exists(/databases/$(database)/documents/trials/$(resource.data.trialId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/trials/$(resource.data.trialId)).data.judges;
+      
+      // Participants can read scores for their own participations
+      allow read: if isParticipant() && 
+        exists(/databases/$(database)/documents/participants/$(resource.data.participantId)) &&
+        request.auth.token.email == get(/databases/$(database)/documents/participants/$(resource.data.participantId)).data.email;
+    }
+
+    // Judge Invitations collection
+    match /judgeInvitations/{invitationId} {
+      // Admins can do everything
+      allow read, write: if isAdmin();
+      
+      // Judges can read and update their own invitations
+      allow read, update: if isJudge() && 
+        request.auth.token.email == resource.data.judgeEmail;
+      
+      // Allow judges to update invitation status (accept/decline)
+      allow update: if isJudge() && 
+        request.auth.token.email == resource.data.judgeEmail &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt']);
+    }
+
+    // Additional security rules for data validation
+    match /trials/{trialId} {
+      allow create: if isAdmin() && 
+        request.resource.data.keys().hasAll(['name', 'date', 'numberOfPosts', 'createdBy']) &&
+        request.resource.data.numberOfPosts is int &&
+        request.resource.data.numberOfPosts >= 1 &&
+        request.resource.data.numberOfPosts <= 6 &&
+        request.resource.data.createdBy == request.auth.uid;
+    }
+
+    match /participants/{participantId} {
+      allow create: if isAdmin() && 
+        request.resource.data.keys().hasAll(['participantNumber', 'dogName', 'dogNumber', 'email', 'trialId']) &&
+        request.resource.data.participantNumber.matches('^[0-9]{4}$') &&
+        request.resource.data.dogNumber.matches('^Dk[0-9]{5}/[0-9]{4}$') &&
+        request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
+    }
+
+    match /scores/{scoreId} {
+      allow create: if isJudge() && 
+        request.resource.data.keys().hasAll(['trialId', 'participantId', 'postNumber', 'score', 'judgeId']) &&
+        request.resource.data.score is int &&
+        request.resource.data.score >= 0 &&
+        request.resource.data.score <= 20 &&
+        request.resource.data.postNumber is int &&
+        request.resource.data.postNumber >= 1 &&
+        request.resource.data.postNumber <= 6 &&
+        request.resource.data.judgeId == request.auth.uid;
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
