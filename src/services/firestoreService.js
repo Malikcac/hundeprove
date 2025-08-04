@@ -205,10 +205,39 @@ export const getJudgeInvitations = async (judgeEmail = null) => {
 export const updateJudgeInvitation = async (invitationId, status) => {
   try {
     const docRef = doc(db, 'judgeInvitations', invitationId);
+    
+    // Get invitation details first
+    const invitationSnap = await getDoc(docRef);
+    if (!invitationSnap.exists()) {
+      throw new Error('Invitation not found');
+    }
+    
+    const invitation = invitationSnap.data();
+    
+    // Update invitation status
     await updateDoc(docRef, {
       status,
       respondedAt: serverTimestamp()
     });
+    
+    // If accepted, add judge to trial
+    if (status === 'accepted') {
+      const trialRef = doc(db, 'trials', invitation.trialId);
+      const trialSnap = await getDoc(trialRef);
+      
+      if (trialSnap.exists()) {
+        const trial = trialSnap.data();
+        const currentJudges = trial.judges || [];
+        
+        // Add judge if not already in the list
+        if (!currentJudges.includes(invitation.judgeId)) {
+          await updateDoc(trialRef, {
+            judges: [...currentJudges, invitation.judgeId]
+          });
+        }
+      }
+    }
+    
   } catch (error) {
     console.error('Error updating invitation:', error);
     throw error;
@@ -233,6 +262,45 @@ export const getUsers = async (role = null) => {
     }));
   } catch (error) {
     console.error('Error fetching users:', error);
+    throw error;
+  }
+};
+
+// Get trials for a specific judge based on accepted invitations
+export const getJudgeTrials = async (judgeId, judgeEmail) => {
+  try {
+    // Get all invitations for this judge and filter accepted ones
+    const invitationsQuery = query(
+      collection(db, 'judgeInvitations'), 
+      where('judgeEmail', '==', judgeEmail)
+    );
+    
+    const invitationsSnapshot = await getDocs(invitationsQuery);
+    
+    // Filter accepted invitations
+    const acceptedTrialIds = invitationsSnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(invitation => invitation.status === 'accepted')
+      .map(invitation => invitation.trialId);
+    
+    if (acceptedTrialIds.length === 0) {
+      return [];
+    }
+    
+    // Get trials for accepted invitations
+    const trialsPromises = acceptedTrialIds.map(async (trialId) => {
+      const trialDoc = await getDoc(doc(db, 'trials', trialId));
+      if (trialDoc.exists()) {
+        return { id: trialDoc.id, ...trialDoc.data() };
+      }
+      return null;
+    });
+    
+    const trials = await Promise.all(trialsPromises);
+    return trials.filter(trial => trial !== null);
+    
+  } catch (error) {
+    console.error('Error fetching judge trials:', error);
     throw error;
   }
 };

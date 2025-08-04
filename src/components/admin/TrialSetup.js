@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createTrial, getTrials } from '../../services/firestoreService';
 import { formatDate, formatDateForInput, parseInputDate } from '../../utils/dateUtils';
@@ -9,6 +10,7 @@ import './TrialSetup.css';
 
 const TrialSetup = () => {
   const { userProfile } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -108,6 +110,16 @@ const TrialSetup = () => {
     } else {
       return <span className="status-badge status-upcoming">Kommende</span>;
     }
+  };
+
+  const handleEditTrial = (trial) => {
+    // For now, just show a message - full edit functionality can be added later
+    toast.info(`Redigering af "${trial.name}" kommer snart...`);
+  };
+
+  const handleManageParticipants = (trial) => {
+    // Navigate to trial participants page with the trial ID
+    navigate(`/admin/trial-participants?trialId=${trial.id}`);
   };
 
   return (
@@ -228,10 +240,18 @@ const TrialSetup = () => {
                           <td>{trial.participants?.length || 0}</td>
                           <td>
                             <div className="action-buttons">
-                              <button className="btn btn-small btn-secondary">
+                              <button 
+                                className="btn btn-small btn-secondary"
+                                onClick={() => handleEditTrial(trial)}
+                                title="Rediger prøve"
+                              >
                                 Rediger
                               </button>
-                              <button className="btn btn-small btn-primary">
+                              <button 
+                                className="btn btn-small btn-primary"
+                                onClick={() => handleManageParticipants(trial)}
+                                title="Administrer deltagere"
+                              >
                                 Deltagere
                               </button>
                             </div>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getTrials } from '../../services/firestoreService';
+import { getJudgeTrials } from '../../services/firestoreService';
 import { formatDate, isToday, isPastDate } from '../../utils/dateUtils';
 import Loading from '../common/Loading';
 import './JudgeTrialView.css';
@@ -10,26 +10,26 @@ const JudgeTrialView = () => {
   const [trials, setTrials] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadMyTrials();
-  }, [userProfile]);
-
-  const loadMyTrials = async () => {
+  const loadMyTrials = useCallback(async () => {
     try {
-      const allTrials = await getTrials();
+      if (!userProfile?.uid || !userProfile?.email) {
+        return;
+      }
       
-      // Filtrer kun prøver hvor brugeren er dommer
-      const myTrials = allTrials.filter(trial => 
-        trial.judges && trial.judges.includes(userProfile.uid)
-      );
-      
+      // Use the new function to get trials based on accepted invitations
+      const myTrials = await getJudgeTrials(userProfile.uid, userProfile.email);
       setTrials(myTrials);
+      
     } catch (error) {
       console.error('Error loading trials:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userProfile?.uid, userProfile?.email]);
+
+  useEffect(() => {
+    loadMyTrials();
+  }, [loadMyTrials]);
 
   const getTrialStatus = (trial) => {
     const trialDate = trial.date?.toDate ? trial.date.toDate() : new Date(trial.date);

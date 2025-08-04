@@ -36,12 +36,15 @@ const ParticipantRegistration = () => {
   const loadTrials = async () => {
     try {
       const trialsData = await getTrials();
-      // Only show upcoming trials
-      const upcomingTrials = trialsData.filter(trial => {
+      // Show trials from today and future (not past trials)
+      const availableTrials = trialsData.filter(trial => {
         const trialDate = trial.date?.toDate ? trial.date.toDate() : new Date(trial.date);
-        return trialDate >= new Date();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of day
+        trialDate.setHours(0, 0, 0, 0); // Set to start of day
+        return trialDate >= today; // Include today's trials
       });
-      setTrials(upcomingTrials);
+      setTrials(availableTrials);
     } catch (error) {
       console.error('Error loading trials:', error);
       toast.error('Fejl ved indlæsning af prøver');

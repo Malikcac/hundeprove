@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getTrials, getParticipants } from '../../services/firestoreService';
 import { formatDate } from '../../utils/dateUtils';
 import Loading from '../common/Loading';
 import './TrialParticipants.css';
 
 const TrialParticipants = () => {
+  const [searchParams] = useSearchParams();
   const [trials, setTrials] = useState([]);
   const [selectedTrial, setSelectedTrial] = useState('');
   const [participants, setParticipants] = useState([]);
@@ -14,6 +16,14 @@ const TrialParticipants = () => {
   useEffect(() => {
     loadTrials();
   }, []);
+
+  useEffect(() => {
+    // Check for trialId in URL params and select that trial
+    const trialId = searchParams.get('trialId');
+    if (trialId && trials.length > 0) {
+      setSelectedTrial(trialId);
+    }
+  }, [searchParams, trials]);
 
   useEffect(() => {
     if (selectedTrial) {

@@ -40,9 +40,9 @@ service cloud.firestore {
       // Admins can do everything
       allow read, write: if isAdmin();
       
-      // Judges can read trials they are invited to
-      allow read: if isJudge() && 
-        request.auth.uid in resource.data.judges;
+      // Judges can read all trials (they need to see trials to know which ones they're invited to)
+      // This is necessary because we need to read the trial data to check invitation status
+      allow read: if isJudge();
       
       // Participants can read all trials (to see available trials)
       allow read: if isParticipant();
