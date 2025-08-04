@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getJudgeTrials } from '../../services/firestoreService';
+import { getJudgeTrials, getParticipants } from '../../services/firestoreService';
 import { formatDate, isToday, isPastDate } from '../../utils/dateUtils';
 import Loading from '../common/Loading';
+import toast from 'react-hot-toast';
 import './JudgeTrialView.css';
 
 const JudgeTrialView = () => {
   const { userProfile } = useAuth();
   const [trials, setTrials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [participantCounts, setParticipantCounts] = useState({});
 
   const loadMyTrials = useCallback(async () => {
     try {
@@ -20,8 +22,22 @@ const JudgeTrialView = () => {
       const myTrials = await getJudgeTrials(userProfile.uid, userProfile.email);
       setTrials(myTrials);
       
+      // Load participant counts for each trial
+      const counts = {};
+      for (const trial of myTrials) {
+        try {
+          const participants = await getParticipants(trial.id);
+          counts[trial.id] = participants.length;
+        } catch (error) {
+          console.error(`Error loading participants for trial ${trial.id}:`, error);
+          counts[trial.id] = 0;
+        }
+      }
+      setParticipantCounts(counts);
+      
     } catch (error) {
       console.error('Error loading trials:', error);
+      toast.error('Fejl ved indlæsning af prøver');
     } finally {
       setLoading(false);
     }
@@ -45,6 +61,26 @@ const JudgeTrialView = () => {
 
   const canJudge = (trial) => {
     return isToday(trial.date);
+  };
+
+  const handleStartScoring = (trial) => {
+    // For now, show a message - scoring functionality can be implemented later
+    toast.success(`Bedømmelse for "${trial.name}" kommer snart...`);
+  };
+
+  const handleViewParticipants = (trial) => {
+    // For now, show a message - participant view can be implemented later  
+    const participantCount = participantCounts[trial.id] || 0;
+    if (participantCount === 0) {
+      toast.success(`Ingen deltagere registreret til "${trial.name}" endnu.`);
+    } else {
+      toast.success(`"${trial.name}" har ${participantCount} deltagere. Deltagervisning kommer snart...`);
+    }
+  };
+
+  const handleViewResults = (trial) => {
+    // For now, show a message - results view can be implemented later
+    toast.success(`Resultater for "${trial.name}" kommer snart...`);
   };
 
   if (loading) {
@@ -84,7 +120,7 @@ const JudgeTrialView = () => {
                         📍 {trial.numberOfPosts} poster
                       </p>
                       <p className="trial-participants">
-                        👥 {trial.participants?.length || 0} deltagere
+                        👥 {participantCounts[trial.id] || 0} deltagere
                       </p>
                     </div>
                     <div className="trial-status">
@@ -96,7 +132,11 @@ const JudgeTrialView = () => {
 
                   <div className="trial-actions">
                     {canJudge(trial) ? (
-                      <button className="btn btn-success">
+                      <button 
+                        className="btn btn-success"
+                        onClick={() => handleStartScoring(trial)}
+                        title="Start bedømmelse af denne prøve"
+                      >
                         🏆 Start Bedømmelse
                       </button>
                     ) : trialStatus.status === 'upcoming' ? (
@@ -104,12 +144,20 @@ const JudgeTrialView = () => {
                         ⏰ Bedømmelse tilgængelig på prøve dagen
                       </button>
                     ) : (
-                      <button className="btn btn-secondary">
+                      <button 
+                        className="btn btn-secondary"
+                        onClick={() => handleViewResults(trial)}
+                        title="Se resultater for denne prøve"
+                      >
                         📊 Se Resultater
                       </button>
                     )}
                     
-                    <button className="btn btn-secondary">
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => handleViewParticipants(trial)}
+                      title="Se deltagere i denne prøve"
+                    >
                       👥 Se Deltagere
                     </button>
                   </div>

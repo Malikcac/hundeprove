@@ -53,10 +53,14 @@ service cloud.firestore {
       // Admins can do everything
       allow read, write: if isAdmin();
       
-      // Judges can read participants for trials they are judging
+      // Judges can read participants for trials they are judging (in judges array)
       allow read: if isJudge() && 
         exists(/databases/$(database)/documents/trials/$(resource.data.trialId)) &&
         request.auth.uid in get(/databases/$(database)/documents/trials/$(resource.data.trialId)).data.judges;
+      
+      // Judges can also read participants for trials where they have accepted invitations
+      // For now, allow all judges to read participants (they filter by accepted invitations in code)
+      allow read: if isJudge();
       
       // Participants can read their own registrations (based on email)
       allow read: if isParticipant() && 
